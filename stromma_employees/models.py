@@ -45,21 +45,35 @@ class Employee(models.Model):
         return f"{self.first_name} {self.last_name}"
 
 
-# ---------------------------
-# NEW: Season
-# ---------------------------
-class Season(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+class WorkProgram(models.Model):
+    STATUS_CHOICES = [
+        ("draft", "Draft"),
+        ("active", "Active"),
+        ("inactive", "Inactive"),
+        ("archived", "Archived"),
+    ]
+
+    name = models.CharField(max_length=100)
     valid_from = models.DateField()
     valid_to = models.DateField()
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="draft",
+    )
+    notes = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-valid_from", "name"]
 
     def __str__(self):
         return f"{self.name} ({self.valid_from} - {self.valid_to})"
 
 
-# ---------------------------
-# NEW: ShiftTemplate
-# ---------------------------
 class ShiftTemplate(models.Model):
     STATUS_CHOICES = [
         ("draft", "Draft"),
@@ -75,14 +89,14 @@ class ShiftTemplate(models.Model):
         ("trainer", "Trainer"),
     ]
 
-    code = models.CharField(max_length=20)
-    name = models.CharField(max_length=100, blank=True)
-
-    season = models.ForeignKey(
-        Season,
+    work_program = models.ForeignKey(
+        WorkProgram,
         on_delete=models.CASCADE,
         related_name="shift_templates"
     )
+
+    code = models.CharField(max_length=20)
+    name = models.CharField(max_length=100, blank=True)
 
     valid_from = models.DateField()
     valid_to = models.DateField()
@@ -111,15 +125,12 @@ class ShiftTemplate(models.Model):
 
     class Meta:
         ordering = ["code", "valid_from"]
-        unique_together = ("code", "season", "valid_from", "valid_to")
+        unique_together = ("work_program", "code", "valid_from", "valid_to")
 
     def __str__(self):
-        return f"{self.code} - {self.season.name}"
+        return f"{self.code} - {self.work_program.name}"
 
 
-# ---------------------------
-# NEW: ShiftBreak (PAUZE)
-# ---------------------------
 class ShiftBreak(models.Model):
     shift_template = models.ForeignKey(
         ShiftTemplate,
@@ -128,12 +139,9 @@ class ShiftBreak(models.Model):
     )
 
     break_order = models.PositiveIntegerField(default=1)
-
     break_start = models.TimeField()
     break_end = models.TimeField()
-
     is_paid = models.BooleanField(default=False)
-
     notes = models.TextField(blank=True)
 
     class Meta:
