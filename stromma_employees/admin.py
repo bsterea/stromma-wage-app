@@ -1,5 +1,11 @@
 from django.contrib import admin
-from .models import Employee, Role, Season, ShiftTemplate
+from .models import (
+    Employee,
+    Role,
+    WorkProgram,
+    ShiftTemplate,
+    ShiftBreak,
+)
 
 
 @admin.register(Employee)
@@ -14,17 +20,23 @@ class RoleAdmin(admin.ModelAdmin):
     list_display = ("name",)
 
 
-@admin.register(Season)
-class SeasonAdmin(admin.ModelAdmin):
-    list_display = ("name", "valid_from", "valid_to")
+@admin.register(WorkProgram)
+class WorkProgramAdmin(admin.ModelAdmin):
+    list_display = ("name", "valid_from", "valid_to", "status", "is_active")
     search_fields = ("name",)
+    list_filter = ("status", "is_active")
+
+
+class ShiftBreakInline(admin.TabularInline):
+    model = ShiftBreak
+    extra = 1
 
 
 @admin.register(ShiftTemplate)
 class ShiftTemplateAdmin(admin.ModelAdmin):
     list_display = (
         "code",
-        "season",
+        "work_program",
         "valid_from",
         "valid_to",
         "start_time",
@@ -34,4 +46,5 @@ class ShiftTemplateAdmin(admin.ModelAdmin):
         "is_active",
     )
     search_fields = ("code", "name")
-    list_filter = ("season", "role_required", "status", "is_active")
+    list_filter = ("work_program", "role_required", "status", "is_active")
+    inlines = [ShiftBreakInline]
