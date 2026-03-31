@@ -150,3 +150,81 @@ class ShiftBreak(models.Model):
 
     def __str__(self):
         return f"{self.shift_template.code} - Break {self.break_order}"
+
+
+class LegalRule(models.Model):
+    RULE_TYPE_CHOICES = [
+        ("break", "Break rule"),
+        ("rest", "Rest rule"),
+        ("daily_limit", "Daily working limit"),
+    ]
+
+    name = models.CharField(max_length=200)
+    rule_type = models.CharField(max_length=20, choices=RULE_TYPE_CHOICES)
+
+    max_work_before_break = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Minutes allowed before a break is required"
+    )
+
+    min_break_duration = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Minimum break duration in minutes"
+    )
+
+    min_daily_rest = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Minimum rest between shifts in minutes"
+    )
+
+    valid_from = models.DateField()
+    valid_to = models.DateField()
+
+    source = models.CharField(
+        max_length=200,
+        help_text="Example: Turistoverenskomst 2025-2028"
+    )
+
+    description = models.TextField(blank=True)
+
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.rule_type})"
+
+
+class ShiftValidation(models.Model):
+    STATUS_CHOICES = [
+        ("valid", "Valid"),
+        ("warning", "Warning"),
+        ("invalid", "Invalid"),
+    ]
+
+    shift_template = models.ForeignKey(
+        ShiftTemplate,
+        on_delete=models.CASCADE,
+        related_name="validations"
+    )
+
+    rule = models.ForeignKey(
+        LegalRule,
+        on_delete=models.CASCADE
+    )
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+
+    message = models.TextField()
+
+    can_override = models.BooleanField(default=True)
+    overridden = models.BooleanField(default=False)
+
+    overridden_by = models.CharField(max_length=100, blank=True)
+    override_reason = models.TextField(blank=True)
+
+    checked_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.shift_template.code} - {self.status}"
