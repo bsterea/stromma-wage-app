@@ -157,31 +157,58 @@ class LegalRule(models.Model):
         ("break", "Break rule"),
         ("rest", "Rest rule"),
         ("daily_limit", "Daily working limit"),
+        ("weekly_limit", "Weekly working limit"),
+        ("monthly_limit", "Monthly working limit"),
+        ("days_pattern", "Working days pattern"),
+        ("notice", "Notice rule"),
+        ("informative", "Informative rule"),
+    ]
+
+    SEVERITY_CHOICES = [
+        ("info", "Info"),
+        ("warning", "Warning"),
+        ("blocking", "Blocking"),
+    ]
+
+    UNIT_CHOICES = [
+        ("minutes", "Minutes"),
+        ("hours", "Hours"),
+        ("days", "Days"),
+        ("weeks", "Weeks"),
+        ("months", "Months"),
+        ("count", "Count"),
+        ("text", "Text only"),
     ]
 
     name = models.CharField(max_length=200)
-    rule_type = models.CharField(max_length=20, choices=RULE_TYPE_CHOICES)
-
-    max_work_before_break = models.PositiveIntegerField(
-        null=True,
-        blank=True,
-        help_text="Minutes allowed before a break is required"
+    rule_type = models.CharField(max_length=30, choices=RULE_TYPE_CHOICES)
+    severity = models.CharField(
+        max_length=20,
+        choices=SEVERITY_CHOICES,
+        default="info",
     )
 
-    min_break_duration = models.PositiveIntegerField(
+    numeric_value_1 = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
         null=True,
         blank=True,
-        help_text="Minimum break duration in minutes"
+        help_text="Primary numeric value"
     )
 
-    min_daily_rest = models.PositiveIntegerField(
+    numeric_value_2 = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
         null=True,
         blank=True,
-        help_text="Minimum rest between shifts in minutes"
+        help_text="Secondary numeric value"
     )
 
-    valid_from = models.DateField()
-    valid_to = models.DateField()
+    unit = models.CharField(
+        max_length=20,
+        choices=UNIT_CHOICES,
+        default="text",
+    )
 
     source = models.CharField(
         max_length=200,
@@ -190,7 +217,13 @@ class LegalRule(models.Model):
 
     description = models.TextField(blank=True)
 
+    valid_from = models.DateField()
+    valid_to = models.DateField()
+
     is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["name", "valid_from"]
 
     def __str__(self):
         return f"{self.name} ({self.rule_type})"
